@@ -1,0 +1,424 @@
+# ==============================================================================
+# ARQUIVO DE CONFIGURAÇÃO - IPS FINAL
+# Versão: WCL (g=2.2) + Trilateração (Restaurada) + Correções de Gráfico
+# ==============================================================================
+
+default_config:
+
+frontend:
+  themes: !include_dir_merge_named themes
+
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+
+browser_mod:
+
+# ==============================================================================
+# 1. AJUDANTES (INPUTS)
+# ==============================================================================
+input_text:
+  tag_id:
+    name: ID da tag
+    icon: mdi:card-account-details-outline
+  tag_nome:
+    name: Nome
+    icon: mdi:tag-text-outline
+  
+  # Slots de Monitoramento
+  slot_01_id:
+    name: Slot 01 ID
+  slot_02_id:
+    name: Slot 02 ID
+  slot_03_id:
+    name: Slot 03 ID
+  
+  # Placeholders (Compatibilidade)
+  slot_01_nome:
+    name: Slot 01 Nome
+  slot_01_tipo:
+    name: Slot 01 Tipo
+  slot_02_nome:
+    name: Slot 02 Nome
+  slot_02_tipo:
+    name: Slot 02 Tipo
+  slot_03_nome:
+    name: Slot 03 Nome
+  slot_03_tipo:
+    name: Slot 03 Tipo
+  filtro_tag_id:
+    name: Filtro Tag ID
+  filtro_tag_nome:
+    name: Filtro Tag Nome
+  editar_tag_id:
+    name: ID Edição
+  editar_tag_nome:
+    name: Nome Edição
+
+input_select:
+  tag_tipo:
+    name: Tipo da tag
+    options: ["Paciente", "Equipamento", "Profissional"]
+  filtro_tag_tipo:
+    name: Filtro Tag Tipo
+    options: ["Todos"]
+  resultado_busca_tags:
+    name: Resultado Busca
+    options: ["Aguardando..."]
+  editar_tag_tipo:
+    name: Edição Tipo
+    options: ["Paciente"]
+
+# ==============================================================================
+# 2. GROUND TRUTH (POSIÇÃO REAL)
+# ==============================================================================
+input_number:
+  gt_x:
+    name: "Posição real X (GT)"
+    min: -10
+    max: 10
+    step: 0.01
+    unit_of_measurement: "m"
+    mode: box
+    icon: mdi:axis-x-arrow
+  gt_y:
+    name: "Posição real Y (GT)"
+    min: -10
+    max: 10
+    step: 0.01
+    unit_of_measurement: "m"
+    mode: box
+    icon: mdi:axis-y-arrow
+
+# ==============================================================================
+# 3. SENSORES MATEMÁTICOS (TEMPLATE)
+# ==============================================================================
+template:
+  # ----------------------------------------------------------------------------
+  # BLOCO A: WCL (Fator g=2.2 + Clamp 0.3m)
+  # ----------------------------------------------------------------------------
+  - sensor:
+      # --- SLOT 01 X (WCL) ---
+      - name: "Rastreador Slot 01 X"
+        unique_id: rastreador_slot_01_x
+        unit_of_measurement: "m"      # <--- Corrige gráfico de barra para linha
+        state_class: measurement
+        state: >
+          {% set id = states('input_text.slot_01_id') %}
+          {% if id in ['unknown', '', 'unavailable'] %} 0 {% else %}
+            {% set base = 'sensor.bermuda_' ~ id ~ '_distance_to_proxy_bermuda_' %}
+            {% set d1 = states(base~'01')|float(10) %}
+            {% set d2 = states(base~'02')|float(10) %}
+            {% set d3 = states(base~'03')|float(10) %}
+            {% set x1, x2, x3 = 0.00, 2.35, 0.20 %}
+            {% set g = 2.2 %}
+            {% set w1 = 1 / (([0.3, d1]|max) ** g) %}
+            {% set w2 = 1 / (([0.3, d2]|max) ** g) %}
+            {% set w3 = 1 / (([0.3, d3]|max) ** g) %}
+            {{ ((x1*w1 + x2*w2 + x3*w3) / (w1+w2+w3)) | round(2) }}
+          {% endif %}
+
+      # --- SLOT 01 Y (WCL) ---
+      - name: "Rastreador Slot 01 Y"
+        unique_id: rastreador_slot_01_y
+        unit_of_measurement: "m"
+        state_class: measurement
+        state: >
+          {% set id = states('input_text.slot_01_id') %}
+          {% if id in ['unknown', '', 'unavailable'] %} 0 {% else %}
+            {% set base = 'sensor.bermuda_' ~ id ~ '_distance_to_proxy_bermuda_' %}
+            {% set d1 = states(base~'01')|float(10) %}
+            {% set d2 = states(base~'02')|float(10) %}
+            {% set d3 = states(base~'03')|float(10) %}
+            {% set y1, y2, y3 = 2.23, 0.77, 0.00 %}
+            {% set g = 2.2 %}
+            {% set w1 = 1 / (([0.3, d1]|max) ** g) %}
+            {% set w2 = 1 / (([0.3, d2]|max) ** g) %}
+            {% set w3 = 1 / (([0.3, d3]|max) ** g) %}
+            {{ ((y1*w1 + y2*w2 + y3*w3) / (w1+w2+w3)) | round(2) }}
+          {% endif %}
+
+      # --- SLOT 02 X (WCL) ---
+      - name: "Rastreador Slot 02 X"
+        unique_id: rastreador_slot_02_x
+        unit_of_measurement: "m"
+        state_class: measurement
+        state: >
+          {% set id = states('input_text.slot_02_id') %}
+          {% if id in ['unknown', '', 'unavailable'] %} 0 {% else %}
+            {% set base = 'sensor.bermuda_' ~ id ~ '_distance_to_proxy_bermuda_' %}
+            {% set d1 = states(base~'01')|float(10) %}
+            {% set d2 = states(base~'02')|float(10) %}
+            {% set d3 = states(base~'03')|float(10) %}
+            {% set x1, x2, x3 = 0.00, 2.35, 0.20 %}
+            {% set g = 2.2 %}
+            {% set w1 = 1 / (([0.3, d1]|max) ** g) %}
+            {% set w2 = 1 / (([0.3, d2]|max) ** g) %}
+            {% set w3 = 1 / (([0.3, d3]|max) ** g) %}
+            {{ ((x1*w1 + x2*w2 + x3*w3) / (w1+w2+w3)) | round(2) }}
+          {% endif %}
+
+      # --- SLOT 02 Y (WCL) ---
+      - name: "Rastreador Slot 02 Y"
+        unique_id: rastreador_slot_02_y
+        unit_of_measurement: "m"
+        state_class: measurement
+        state: >
+          {% set id = states('input_text.slot_02_id') %}
+          {% if id in ['unknown', '', 'unavailable'] %} 0 {% else %}
+            {% set base = 'sensor.bermuda_' ~ id ~ '_distance_to_proxy_bermuda_' %}
+            {% set d1 = states(base~'01')|float(10) %}
+            {% set d2 = states(base~'02')|float(10) %}
+            {% set d3 = states(base~'03')|float(10) %}
+            {% set y1, y2, y3 = 2.23, 0.77, 0.00 %}
+            {% set g = 2.2 %}
+            {% set w1 = 1 / (([0.3, d1]|max) ** g) %}
+            {% set w2 = 1 / (([0.3, d2]|max) ** g) %}
+            {% set w3 = 1 / (([0.3, d3]|max) ** g) %}
+            {{ ((y1*w1 + y2*w2 + y3*w3) / (w1+w2+w3)) | round(2) }}
+          {% endif %}
+
+      # --- SLOT 03 X (WCL) ---
+      - name: "Rastreador Slot 03 X"
+        unique_id: rastreador_slot_03_x
+        unit_of_measurement: "m"
+        state_class: measurement
+        state: >
+          {% set id = states('input_text.slot_03_id') %}
+          {% if id in ['unknown', '', 'unavailable'] %} 0 {% else %}
+            {% set base = 'sensor.bermuda_' ~ id ~ '_distance_to_proxy_bermuda_' %}
+            {% set d1 = states(base~'01')|float(10) %}
+            {% set d2 = states(base~'02')|float(10) %}
+            {% set d3 = states(base~'03')|float(10) %}
+            {% set x1, x2, x3 = 0.00, 2.35, 0.20 %}
+            {% set g = 2.2 %}
+            {% set w1 = 1 / (([0.3, d1]|max) ** g) %}
+            {% set w2 = 1 / (([0.3, d2]|max) ** g) %}
+            {% set w3 = 1 / (([0.3, d3]|max) ** g) %}
+            {{ ((x1*w1 + x2*w2 + x3*w3) / (w1+w2+w3)) | round(2) }}
+          {% endif %}
+
+      # --- SLOT 03 Y (WCL) ---
+      - name: "Rastreador Slot 03 Y"
+        unique_id: rastreador_slot_03_y
+        unit_of_measurement: "m"
+        state_class: measurement
+        state: >
+          {% set id = states('input_text.slot_03_id') %}
+          {% if id in ['unknown', '', 'unavailable'] %} 0 {% else %}
+            {% set base = 'sensor.bermuda_' ~ id ~ '_distance_to_proxy_bermuda_' %}
+            {% set d1 = states(base~'01')|float(10) %}
+            {% set d2 = states(base~'02')|float(10) %}
+            {% set d3 = states(base~'03')|float(10) %}
+            {% set y1, y2, y3 = 2.23, 0.77, 0.00 %}
+            {% set g = 2.2 %}
+            {% set w1 = 1 / (([0.3, d1]|max) ** g) %}
+            {% set w2 = 1 / (([0.3, d2]|max) ** g) %}
+            {% set w3 = 1 / (([0.3, d3]|max) ** g) %}
+            {{ ((y1*w1 + y2*w2 + y3*w3) / (w1+w2+w3)) | round(2) }}
+          {% endif %}
+
+  # ----------------------------------------------------------------------------
+  # BLOCO B: TRILATERAÇÃO (RESTAURADA - ESSA ERA A "ENTITY" QUE SUMIU)
+  # ----------------------------------------------------------------------------
+  - sensor:
+      # SLOT 01 - TRILATERAÇÃO
+      - name: "Rastreador Slot 01 X Trilateracao"
+        unique_id: rastreador_slot_01_x_trilateracao
+        unit_of_measurement: "m"
+        state_class: measurement
+        state: >
+          {% set id = states('input_text.slot_01_id') %}
+          {% if id in ['unknown', '', 'unavailable'] %} 0 {% else %}
+            {% set base = 'sensor.bermuda_' ~ id ~ '_distance_to_proxy_bermuda_' %}
+            {% set d1 = states(base~'01')|float(10) %}
+            {% set d2 = states(base~'02')|float(10) %}
+            {% set d3 = states(base~'03')|float(10) %}
+            {% set x1, y1, x2, y2, x3, y3 = 0.0, 2.23, 2.35, 0.77, 0.2, 0.0 %}
+            {% set A, B = 2*(x2-x1), 2*(y2-y1) %}
+            {% set C = d1**2 - d2**2 - x1**2 + x2**2 - y1**2 + y2**2 %}
+            {% set D, E = 2*(x3-x2), 2*(y3-y2) %}
+            {% set F = d2**2 - d3**2 - x2**2 + x3**2 - y2**2 + y3**2 %}
+            {% set div = (E*A - B*D) %}
+            {{ ((C*E - F*B) / div) | round(2) if div != 0 else 0 }}
+          {% endif %}
+
+      - name: "Rastreador Slot 01 Y Trilateracao"
+        unique_id: rastreador_slot_01_y_trilateracao
+        unit_of_measurement: "m"
+        state_class: measurement
+        state: >
+          {% set id = states('input_text.slot_01_id') %}
+          {% if id in ['unknown', '', 'unavailable'] %} 0 {% else %}
+            {% set base = 'sensor.bermuda_' ~ id ~ '_distance_to_proxy_bermuda_' %}
+            {% set d1 = states(base~'01')|float(10) %}
+            {% set d2 = states(base~'02')|float(10) %}
+            {% set d3 = states(base~'03')|float(10) %}
+            {% set x1, y1, x2, y2, x3, y3 = 0.0, 2.23, 2.35, 0.77, 0.2, 0.0 %}
+            {% set A, B = 2*(x2-x1), 2*(y2-y1) %}
+            {% set C = d1**2 - d2**2 - x1**2 + x2**2 - y1**2 + y2**2 %}
+            {% set D, E = 2*(x3-x2), 2*(y3-y2) %}
+            {% set F = d2**2 - d3**2 - x2**2 + x3**2 - y2**2 + y3**2 %}
+            {% set div = (E*A - B*D) %}
+            {{ ((A*F - C*D) / div) | round(2) if div != 0 else 0 }}
+          {% endif %}
+      
+      # SLOT 02 - TRILATERAÇÃO
+      - name: "Rastreador Slot 02 X Trilateracao"
+        unique_id: rastreador_slot_02_x_trilateracao
+        unit_of_measurement: "m"
+        state_class: measurement
+        state: >
+          {% set id = states('input_text.slot_02_id') %}
+          {% if id in ['unknown', '', 'unavailable'] %} 0 {% else %}
+            {% set base = 'sensor.bermuda_' ~ id ~ '_distance_to_proxy_bermuda_' %}
+            {% set d1 = states(base~'01')|float(10) %}
+            {% set d2 = states(base~'02')|float(10) %}
+            {% set d3 = states(base~'03')|float(10) %}
+            {% set x1, y1, x2, y2, x3, y3 = 0.0, 2.23, 2.35, 0.77, 0.2, 0.0 %}
+            {% set A, B = 2*(x2-x1), 2*(y2-y1) %}
+            {% set C = d1**2 - d2**2 - x1**2 + x2**2 - y1**2 + y2**2 %}
+            {% set D, E = 2*(x3-x2), 2*(y3-y2) %}
+            {% set F = d2**2 - d3**2 - x2**2 + x3**2 - y2**2 + y3**2 %}
+            {% set div = (E*A - B*D) %}
+            {{ ((C*E - F*B) / div) | round(2) if div != 0 else 0 }}
+          {% endif %}
+
+      - name: "Rastreador Slot 02 Y Trilateracao"
+        unique_id: rastreador_slot_02_y_trilateracao
+        unit_of_measurement: "m"
+        state_class: measurement
+        state: >
+          {% set id = states('input_text.slot_02_id') %}
+          {% if id in ['unknown', '', 'unavailable'] %} 0 {% else %}
+            {% set base = 'sensor.bermuda_' ~ id ~ '_distance_to_proxy_bermuda_' %}
+            {% set d1 = states(base~'01')|float(10) %}
+            {% set d2 = states(base~'02')|float(10) %}
+            {% set d3 = states(base~'03')|float(10) %}
+            {% set x1, y1, x2, y2, x3, y3 = 0.0, 2.23, 2.35, 0.77, 0.2, 0.0 %}
+            {% set A, B = 2*(x2-x1), 2*(y2-y1) %}
+            {% set C = d1**2 - d2**2 - x1**2 + x2**2 - y1**2 + y2**2 %}
+            {% set D, E = 2*(x3-x2), 2*(y3-y2) %}
+            {% set F = d2**2 - d3**2 - x2**2 + x3**2 - y2**2 + y3**2 %}
+            {% set div = (E*A - B*D) %}
+            {{ ((A*F - C*D) / div) | round(2) if div != 0 else 0 }}
+          {% endif %}
+
+      # SLOT 03 - TRILATERAÇÃO
+      - name: "Rastreador Slot 03 X Trilateracao"
+        unique_id: rastreador_slot_03_x_trilateracao
+        unit_of_measurement: "m"
+        state_class: measurement
+        state: >
+          {% set id = states('input_text.slot_03_id') %}
+          {% if id in ['unknown', '', 'unavailable'] %} 0 {% else %}
+            {% set base = 'sensor.bermuda_' ~ id ~ '_distance_to_proxy_bermuda_' %}
+            {% set d1 = states(base~'01')|float(10) %}
+            {% set d2 = states(base~'02')|float(10) %}
+            {% set d3 = states(base~'03')|float(10) %}
+            {% set x1, y1, x2, y2, x3, y3 = 0.0, 2.23, 2.35, 0.77, 0.2, 0.0 %}
+            {% set A, B = 2*(x2-x1), 2*(y2-y1) %}
+            {% set C = d1**2 - d2**2 - x1**2 + x2**2 - y1**2 + y2**2 %}
+            {% set D, E = 2*(x3-x2), 2*(y3-y2) %}
+            {% set F = d2**2 - d3**2 - x2**2 + x3**2 - y2**2 + y3**2 %}
+            {% set div = (E*A - B*D) %}
+            {{ ((C*E - F*B) / div) | round(2) if div != 0 else 0 }}
+          {% endif %}
+
+      - name: "Rastreador Slot 03 Y Trilateracao"
+        unique_id: rastreador_slot_03_y_trilateracao
+        unit_of_measurement: "m"
+        state_class: measurement
+        state: >
+          {% set id = states('input_text.slot_03_id') %}
+          {% if id in ['unknown', '', 'unavailable'] %} 0 {% else %}
+            {% set base = 'sensor.bermuda_' ~ id ~ '_distance_to_proxy_bermuda_' %}
+            {% set d1 = states(base~'01')|float(10) %}
+            {% set d2 = states(base~'02')|float(10) %}
+            {% set d3 = states(base~'03')|float(10) %}
+            {% set x1, y1, x2, y2, x3, y3 = 0.0, 2.23, 2.35, 0.77, 0.2, 0.0 %}
+            {% set A, B = 2*(x2-x1), 2*(y2-y1) %}
+            {% set C = d1**2 - d2**2 - x1**2 + x2**2 - y1**2 + y2**2 %}
+            {% set D, E = 2*(x3-x2), 2*(y3-y2) %}
+            {% set F = d2**2 - d3**2 - x2**2 + x3**2 - y2**2 + y3**2 %}
+            {% set div = (E*A - B*D) %}
+            {{ ((A*F - C*D) / div) | round(2) if div != 0 else 0 }}
+          {% endif %}
+
+  # ----------------------------------------------------------------------------
+  # BLOCO C: SENSORES DE ERRO (ABSOLUTO E PORCENTAGEM)
+  # ----------------------------------------------------------------------------
+  - sensor:
+      # --- ERRO ABSOLUTO (METROS) ---
+      - name: "Erro Slot 01 WCL"
+        unique_id: erro_slot_01_wcl
+        unit_of_measurement: "m"
+        state_class: measurement
+        state: >
+          {% set xgt = states('input_number.gt_x')|float(0) %}
+          {% set ygt = states('input_number.gt_y')|float(0) %}
+          {% set x = states('sensor.rastreador_slot_01_x')|float(0) %}
+          {% set y = states('sensor.rastreador_slot_01_y')|float(0) %}
+          {{ (((x-xgt)**2 + (y-ygt)**2) ** 0.5) | round(2) }}
+
+      - name: "Erro Slot 02 WCL"
+        unique_id: erro_slot_02_wcl
+        unit_of_measurement: "m"
+        state_class: measurement
+        state: >
+          {% set xgt = states('input_number.gt_x')|float(0) %}
+          {% set ygt = states('input_number.gt_y')|float(0) %}
+          {% set x = states('sensor.rastreador_slot_02_x')|float(0) %}
+          {% set y = states('sensor.rastreador_slot_02_y')|float(0) %}
+          {{ (((x-xgt)**2 + (y-ygt)**2) ** 0.5) | round(2) }}
+
+      - name: "Erro Slot 03 WCL"
+        unique_id: erro_slot_03_wcl
+        unit_of_measurement: "m"
+        state_class: measurement
+        state: >
+          {% set xgt = states('input_number.gt_x')|float(0) %}
+          {% set ygt = states('input_number.gt_y')|float(0) %}
+          {% set x = states('sensor.rastreador_slot_03_x')|float(0) %}
+          {% set y = states('sensor.rastreador_slot_03_y')|float(0) %}
+          {{ (((x-xgt)**2 + (y-ygt)**2) ** 0.5) | round(2) }}
+      
+      # --- ERRO TRILATERAÇÃO (METROS) ---
+      - name: "Erro Slot 01 Trilateracao"
+        unique_id: erro_slot_01_trilateracao
+        unit_of_measurement: "m"
+        state_class: measurement
+        state: >
+          {% set xgt = states('input_number.gt_x')|float(0) %}
+          {% set ygt = states('input_number.gt_y')|float(0) %}
+          {% set x = states('sensor.rastreador_slot_01_x_trilateracao')|float(0) %}
+          {% set y = states('sensor.rastreador_slot_01_y_trilateracao')|float(0) %}
+          {{ (((x-xgt)**2 + (y-ygt)**2) ** 0.5) | round(2) }}
+
+      # --- ERRO RELATIVO (PORCENTAGEM) ---
+      - name: "Erro Relativo Slot 01 (%)"
+        unique_id: erro_relativo_slot_01
+        unit_of_measurement: "%"
+        state_class: measurement
+        state: >
+          {% set erro_m = states('sensor.erro_slot_01_wcl')|float(0) %}
+          {# Diagonal aproximada: 3.24m #}
+          {{ (erro_m / 3.24 * 100) | round(1) }}
+      
+      - name: "Erro Relativo Slot 02 (%)"
+        unique_id: erro_relativo_slot_02
+        unit_of_measurement: "%"
+        state_class: measurement
+        state: >
+          {% set erro_m = states('sensor.erro_slot_02_wcl')|float(0) %}
+          {{ (erro_m / 3.24 * 100) | round(1) }}
+
+      - name: "Erro Relativo Slot 03 (%)"
+        unique_id: erro_relativo_slot_03
+        unit_of_measurement: "%"
+        state_class: measurement
+        state: >
+          {% set erro_m = states('sensor.erro_slot_03_wcl')|float(0) %}
+          {{ (erro_m / 3.24 * 100) | round(1) }}
+
+mande o codigo todo
